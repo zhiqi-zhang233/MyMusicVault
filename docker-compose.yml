@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: music_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-seed:
+    image: mongo:6.0
+    container_name: music_seeder
+    depends_on:
+      - mongodb
+    volumes:
+      - ./data:/data
+    command: >
+      mongoimport --host mongodb --db music_vault --collection tracks 
+      --type json --file /data/final_spotify_data_genres.json --jsonArray --drop
+
+  web:
+    build: ./web
+    container_name: music_flask_app
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/music_vault
+    volumes:
+      - ./web:/app
+
+volumes:
+  mongo_data:

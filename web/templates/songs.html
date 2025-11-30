@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% macro render_song_item(song) %}
+<div class="song-item" onclick="openModal(this)"
+     data-id="{{ song._id }}"
+     data-name="{{ song.name }}"
+     data-artist="{{ song.artists[0].name }}"
+     data-album="{{ song.album.name }}"
+     data-img="{{ song.album.images[0].url if song.album.images else '' }}"
+     data-duration="{{ song.duration_ms }}"
+     data-review="{{ song.my_review or '' }}">
+    <img src="{{ song.album.images[2].url if song.album.images else '' }}" class="song-thumb">
+    <div class="song-meta">
+        <div class="song-title">{{ song.name }}</div>
+        <div class="song-artist">{{ song.artists[0].name }}</div>
+    </div>
+    <div class="song-time" data-ms="{{ song.duration_ms }}"></div>
+</div>
+{% endmacro %}
+
+<style>
+    .search-section { max-width: 600px; margin: 30px auto; position: relative; z-index: 10; }
+    .search-bar-group { display: flex; gap: 10px; align-items: center; }
+    .search-wrapper { flex-grow: 1; position: relative; }
+    
+    .search-input {
+        width: 100%; background-color: #242424; border: 1px solid transparent;
+        border-radius: 500px; padding: 14px 45px; color: white;
+        font-size: 0.95rem; transition: 0.3s;
+    }
+    .search-input:focus { background-color: #333; border-color: white; outline: none; }
+    .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #b3b3b3; }
+
+    .filter-btn {
+        background-color: #242424; color: #b3b3b3; border: none;
+        width: 50px; height: 50px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+    }
+    .filter-btn:hover, .filter-btn.active { background-color: var(--spotify-green); color: black; }
+
+    #filterPanel {
+        background-color: #181818; border-radius: 12px; margin-top: 15px; padding: 20px;
+        display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333;
+    }
+    .filter-label { font-size: 0.8rem; font-weight: 700; color: #b3b3b3; text-transform: uppercase; margin-bottom: 10px; display: block; }
+    .date-input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 6px; width: 100%; }
+    .date-input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+    
+    .genre-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; }
+    .filter-pill {
+        background-color: #2a2a2a; color: white; padding: 6px 16px; border-radius: 20px;
+        font-size: 0.85rem; cursor: pointer; border: 1px solid transparent; transition: 0.2s; user-select: none;
+    }
+    .filter-pill:hover { border-color: #666; }
+    .filter-pill.selected { background-color: var(--spotify-green); color: black; font-weight: 700; border-color: var(--spotify-green); }
+
+    .song-item {
+        display: flex; align-items: center; padding: 10px; border-radius: 6px;
+        cursor: pointer; transition: 0.2s; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .song-item:hover { background-color: rgba(255, 255, 255, 0.1); }
+    .song-thumb { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 15px; background: #333; }
+    .song-meta { flex-grow: 1; overflow: hidden; }
+    .song-title { font-weight: 600; color: white; }
+    .song-artist { font-size: 0.85rem; color: #b3b3b3; }
+    .song-time { font-size: 0.85rem; color: #b3b3b3; }
+
+    .glass-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        z-index: 9999;
+        display: none;
+        justify-content: center; align-items: center;
+        opacity: 0; transition: opacity 0.3s ease;
+    }
+    .glass-overlay.active { display: flex; opacity: 1; }
+
+    .detail-card {
+        background: #181818; width: 90%; max-width: 400px;
+        border-radius: 16px; padding: 30px;
+        box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+        position: relative; transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        color: white;
+    }
+    .glass-overlay.active .detail-card { transform: scale(1); }
+
+    .detail-cover {
+        width: 100%; aspect-ratio: 1/1; object-fit: cover;
+        border-radius: 8px; margin-bottom: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .close-btn {
+        position: absolute; top: 15px; right: 20px;
+        background: transparent; border: none;
+        color: #aaa; font-size: 2rem; line-height: 1;
+        cursor: pointer; padding: 0;
+    }
+    .close-btn:hover { color: white; }
+
+    .detail-title { font-size: 1.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 5px; }
+    .detail-artist { font-size: 1rem; color: #b3b3b3; margin-bottom: 20px; }
+    
+    .review-box { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-top: 20px; }
+    .review-text { font-style: italic; color: #ddd; font-size: 0.9rem; margin-bottom: 10px; }
+    
+    .btn-action {
+        width: 100%; border-radius: 50px; padding: 12px;
+        font-weight: 700; border: none; margin-top: 10px; cursor: pointer;
+        font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    
+    .btn-save { background-color: var(--spotify-green); color: black; }
+    .btn-save:hover { background-color: #1ed760; transform: scale(1.02); }
+    
+    .btn-delete { 
+        background-color: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; margin-top: 20px;
+    }
+    .btn-delete:hover { background-color: #ff4d4d; color: white; }
+</style>
+
+<div class="search-section">
+    <div class="search-bar-group">
+        <div class="search-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="searchInput" class="search-input" 
+                   placeholder="What do you want to listen to?" 
+                   autocomplete="off" oninput="handleSearch()">
+        </div>
+        <button class="filter-btn" onclick="toggleFilter()" title="Advanced Filters">
+            <i class="bi bi-sliders"></i>
+        </button>
+    </div>
+
+    <div id="filterPanel">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <span class="filter-label">Release Date (From)</span>
+                <input type="date" id="dateStart" class="date-input" onchange="handleSearch()">
+            </div>
+            <div class="col-md-6 mb-3">
+                <span class="filter-label">Release Date (To)</span>
+                <input type="date" id="dateEnd" class="date-input" onchange="handleSearch()">
+            </div>
+        </div>
+        <div class="mb-2">
+            <span class="filter-label">Filter by Genre</span>
+            <div id="genreFilterContainer" class="genre-container">
+                <span class="text-muted small">Loading genres...</span>
+            </div>
+        </div>
+        <div class="text-end mt-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">Clear All</button>
+        </div>
+    </div>
+</div>
+
+<div id="defaultSection" class="row">
+    <div class="col-md-6 mb-4">
+        <div class="h4 fw-bold text-white mb-3">🔥 Most Popular</div>
+        <div class="d-flex flex-column gap-2">
+            {% for song in pop_songs %}
+                {{ render_song_item(song) }}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="h4 fw-bold text-white mb-3">✨ New Releases</div>
+        <div class="d-flex flex-column gap-2">
+            {% for song in new_songs %}
+                {{ render_song_item(song) }}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="searchResultsSection" style="display: none;">
+    <div class="h4 fw-bold text-success mb-3">🔎 Search Results</div>
+    <div id="resultsList" class="d-flex flex-column gap-2"></div>
+</div>
+
+<div id="detailModal" class="glass-overlay" onclick="closeModal(event)">
+    <div class="detail-card" onclick="event.stopPropagation()">
+        <button class="close-btn" onclick="closeModal()">×</button>
+        
+        <img id="mImg" src="" class="detail-cover">
+        
+        <div class="detail-title" id="mTitle">Song Name</div>
+        <div class="detail-artist" id="mArtist">Artist Name</div>
+        <div class="d-flex justify-content-between text-secondary small mb-3">
+            <span id="mAlbum">Album Name</span><span id="mDuration">0:00</span>
+        </div>
+
+        <div class="review-box">
+            <div id="mReviewDisplay" class="review-text">"Best song ever!"</div>
+            <form id="reviewForm" action="" method="POST" class="mt-3">
+                <input type="text" name="review" class="form-control bg-dark text-white border-secondary mb-2" placeholder="Write a review...">
+                <button type="submit" class="btn-action btn-save">Save Review</button>
+            </form>
+        </div>
+
+        <form id="deleteForm" action="" method="POST" onsubmit="return confirm('Delete this song from library?');">
+            <button type="submit" class="btn-action btn-delete">Delete from Library</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/genres')
+            .then(res => res.json())
+            .then(genres => {
+                const container = document.getElementById('genreFilterContainer');
+                container.innerHTML = '';
+                genres.forEach(g => {
+                    const pill = document.createElement('span');
+                    pill.className = 'filter-pill';
+                    pill.innerText = g;
+                    pill.onclick = () => { pill.classList.toggle('selected'); handleSearch(); };
+                    container.appendChild(pill);
+                });
+            });
+        
+        document.querySelectorAll('.song-time').forEach(el => {
+            el.innerText = formatTime(el.dataset.ms);
+        });
+    });
+
+    function toggleFilter() {
+        const panel = document.getElementById('filterPanel');
+        const btn = document.querySelector('.filter-btn');
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none'; btn.classList.remove('active');
+        } else {
+            panel.style.display = 'block'; btn.classList.add('active');
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('dateStart').value = '';
+        document.getElementById('dateEnd').value = '';
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('selected'));
+        handleSearch();
+    }
+
+    let debounceTimer;
+    function handleSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        const start = document.getElementById('dateStart').value;
+        const end = document.getElementById('dateEnd').value;
+        const selectedGenres = Array.from(document.querySelectorAll('.filter-pill.selected')).map(p => p.innerText);
+
+        const defaultSec = document.getElementById('defaultSection');
+        const searchSec = document.getElementById('searchResultsSection');
+        const resultsList = document.getElementById('resultsList');
+
+        if (!query && !start && !end && selectedGenres.length === 0) {
+            defaultSec.style.display = 'flex';
+            searchSec.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const params = new URLSearchParams();
+            if (query) params.append('q', query);
+            if (start) params.append('start', start);
+            if (end) params.append('end', end);
+            selectedGenres.forEach(g => params.append('genres[]', g));
+
+            fetch(`/api/search?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    defaultSec.style.display = 'none';
+                    searchSec.style.display = 'block';
+                    resultsList.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsList.innerHTML = '<div class="text-muted text-center mt-4">No match found.</div>';
+                        return;
+                    }
+
+                    data.forEach(song => {
+                        const div = document.createElement('div');
+                        div.className = 'song-item';
+                        const imgUrl = song.album.images?.[0]?.url || '';
+                        const thumbUrl = song.album.images?.[2]?.url || imgUrl;
+                        
+                        Object.assign(div.dataset, {
+                            id: song._id, name: song.name, artist: song.artists[0].name,
+                            album: song.album.name, img: imgUrl, duration: song.duration_ms,
+                            review: song.my_review || ''
+                        });
+                        div.onclick = function() { openModal(this); };
+                        div.innerHTML = `
+                            <img src="${thumbUrl}" class="song-thumb">
+                            <div class="song-meta">
+                                <div class="song-title">${song.name}</div>
+                                <div class="song-artist">${song.artists[0].name}</div>
+                            </div>
+                            <div class="song-time">${formatTime(song.duration_ms)}</div>
+                        `;
+                        resultsList.appendChild(div);
+                    });
+                });
+        }, 300);
+    }
+
+    function openModal(el) {
+        const d = el.dataset;
+        document.getElementById('mImg').src = d.img;
+        document.getElementById('mTitle').innerText = d.name;
+        document.getElementById('mArtist').innerText = d.artist;
+        document.getElementById('mAlbum').innerText = d.album;
+        document.getElementById('mDuration').innerText = formatTime(d.duration);
+        document.getElementById('mReviewDisplay').innerText = d.review ? `"${d.review}"` : "No review yet...";
+        document.getElementById('reviewForm').action = `/song/${d.id}/review`;
+        document.getElementById('deleteForm').action = `/song/${d.id}/delete`;
+        
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeModal(e) {
+        if (!e || e.target.id === 'detailModal' || e.target.classList.contains('close-btn')) {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+    }
+
+    function formatTime(ms) {
+        const m = Math.floor(ms / 60000);
+        const s = ((ms % 60000) / 1000).toFixed(0);
+        return m + ":" + (s < 10 ? '0' : '') + s;
+    }
+</script>
+{% endblock %}

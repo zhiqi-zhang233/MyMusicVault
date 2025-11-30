@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .add-container {
+        min-height: 85vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+    }
+    
+    .add-card {
+        background-color: #121212;
+        border: 1px solid #333;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 700px;
+        padding: 50px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    }
+    
+    .form-label {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: white;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-control-spotify {
+        background-color: #2a2a2a;
+        border: 1px solid transparent;
+        color: white;
+        border-radius: 6px;
+        padding: 14px;
+        width: 100%;
+        font-size: 1rem;
+        transition: 0.3s;
+    }
+    
+    .form-control-spotify[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+    }
+    
+    .form-control-spotify:focus {
+        background-color: #333;
+        border-color: #555;
+        color: white;
+        outline: 2px solid white;
+        box-shadow: none;
+    }
+    
+    ::placeholder { color: #666; }
+    
+    .btn-save {
+        background-color: var(--spotify-green);
+        color: black;
+        border-radius: 50px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 16px;
+        width: 100%;
+        border: none;
+        margin-top: 20px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .btn-save:hover {
+        background-color: #1ed760;
+        transform: scale(1.02);
+    }
+
+    .help-text {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 6px;
+    }
+</style>
+
+<div class="add-container">
+    <div class="add-card">
+        <h2 class="fw-bold mb-5 text-center" style="font-size: 2rem;">Add to Vault</h2>
+        
+        <form method="POST">
+            <div class="row g-4"> <div class="col-12">
+                    <label class="form-label">Spotify ID (Optional)</label>
+                    <input type="text" name="id" class="form-control-spotify" placeholder="Auto-generated if empty">
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">Song Title</label>
+                    <input type="text" name="name" class="form-control-spotify" required placeholder="e.g. Yellow">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Artist</label>
+                    <input type="text" name="artist" class="form-control-spotify" required placeholder="e.g. Coldplay">
+                </div>
+
+                <div class="col-md-7">
+                    <label class="form-label">Album Name</label>
+                    <input type="text" name="album" class="form-control-spotify" placeholder="e.g. Parachutes">
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Release Date</label>
+                    <input type="date" name="release_date" class="form-control-spotify" required>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Cover Image URL</label>
+                    <input type="url" name="image_url" class="form-control-spotify" placeholder="https://example.com/image.jpg">
+                    <div class="help-text">Paste a direct link to the album artwork (JPG/PNG).</div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Genres</label>
+                    <input type="text" name="genres" class="form-control-spotify" placeholder="Pop, Rock, Indie...">
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="btn-save">Save Song</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

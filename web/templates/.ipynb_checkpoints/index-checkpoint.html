@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    :root {
+        --neon-pink: #f037a5;
+        --neon-green: #cdf564;
+        --spotify-black: #000000;
+        --spotify-white: #ffffff;
+    }
+
+    body {
+        background-color: var(--spotify-black);
+        font-family: 'Montserrat', sans-serif;
+        overflow-x: hidden;
+    }
+
+    section {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 4rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-text {
+        font-size: 4rem;
+        font-weight: 900;
+        line-height: 1.1;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+        opacity: 0; 
+    }
+
+    .fade-up { animation: fadeUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    
+    @keyframes fadeUp {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Fancy Logo */
+    .fancy-logo-container {
+        margin-top: 3rem;
+        position: relative;
+        display: inline-block;
+        opacity: 0;
+        animation: logoReveal 1.5s cubic-bezier(0.19, 1, 0.22, 1) 1.5s forwards;
+    }
+
+    .fancy-logo {
+        font-size: 6rem;
+        font-weight: 900;
+        color: var(--neon-green);
+        letter-spacing: -2px;
+        position: relative;
+        z-index: 2;
+        text-shadow: 0 0 20px rgba(205, 245, 100, 0.3);
+    }
+
+    .fancy-line {
+        position: absolute;
+        height: 6px;
+        background-color: var(--neon-pink);
+        width: 0%;
+        bottom: 15px;
+        left: 0;
+        z-index: 1;
+        animation: expandLine 1s ease-out 2.0s forwards;
+    }
+
+    @keyframes logoReveal {
+        from { transform: scale(0.8); opacity: 0; filter: blur(10px); }
+        to { transform: scale(1); opacity: 1; filter: blur(0); }
+    }
+
+    @keyframes expandLine { to { width: 100%; } }
+
+    .artist-rank-container {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .artist-card {
+        text-align: center;
+        width: 180px;
+    }
+
+    .album-stack {
+        position: relative;
+        height: 180px;
+        width: 180px;
+        margin: 0 auto 20px;
+    }
+
+    .album-stack img {
+        width: 140px;
+        height: 140px;
+        position: absolute;
+        border-radius: 4px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        transition: transform 0.3s;
+        object-fit: cover;
+    }
+
+    .album-stack img:first-child {
+        top: 0;
+        left: 0;
+        z-index: 1;
+        transform: rotate(-5deg);
+        filter: brightness(0.7);
+    }
+
+    .album-stack img:nth-child(2) {
+        bottom: 0;
+        right: 0;
+        z-index: 2;
+        transform: rotate(5deg);
+    }
+    
+    .artist-card:hover .album-stack img:nth-child(2) {
+        transform: scale(1.1) rotate(0deg);
+        z-index: 3;
+    }
+
+    .artist-name {
+        font-weight: bold;
+        color: white;
+        font-size: 1.2rem;
+        margin-top: 10px;
+    }
+
+    .film-strip-container {
+        position: absolute;
+        top: 50%;
+        left: -10%;
+        width: 120%;
+        height: 250px;
+        transform: translateY(-50%) rotate(-5deg);
+        z-index: 0; 
+        overflow: hidden;
+        white-space: nowrap;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    .film-track {
+        display: inline-block;
+        animation: scroll 20s linear infinite;
+    }
+    
+    .film-track img {
+        width: 200px;
+        height: 200px;
+        margin-right: 20px;
+        border-radius: 4px;
+        display: inline-block;
+        box-shadow: 10px 10px 20px rgba(0,0,0,0.2);
+    }
+
+    @keyframes scroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    .gauge-container {
+        width: 300px; height: 150px;
+        background: rgba(0,0,0,0.2); 
+        border-top-left-radius: 150px;
+        border-top-right-radius: 150px;
+        position: relative;
+        margin: 0 auto 30px;
+        overflow: hidden;
+    }
+    .gauge-fill {
+        width: 100%; height: 100%;
+        background: var(--neon-green);
+        transform-origin: bottom center;
+        transform: rotate(0deg);
+        animation: gaugeMove 2s ease-out forwards;
+    }
+    .gauge-cover {
+        width: 260px; height: 130px;
+        background: var(--neon-pink);
+        border-top-left-radius: 130px;
+        border-top-right-radius: 130px;
+        position: absolute;
+        bottom: 0; left: 20px;
+    }
+    
+    @keyframes gaugeMove {
+        from { transform: rotate(-180deg); }
+        to { transform: rotate(-30deg); }
+    }
+
+    .genre-header-bar {
+        position: absolute;
+        top: 0; left: 0; width: 100%;
+        height: 80px;
+        background-color: #000;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 2px solid var(--neon-green);
+    }
+    
+    .genre-header-text {
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--neon-green);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .genre-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        height: 100vh;
+        width: 100%;
+        position: absolute;
+        top: 0; left: 0;
+        padding-top: 80px;
+    }
+
+    .genre-col {
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        border-right: 1px solid #000;
+        transition: flex 0.4s ease;
+    }
+
+    .genre-bg {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        filter: grayscale(100%) brightness(0.7); 
+        transition: transform 0.6s ease, filter 0.6s ease;
+    }
+
+    .genre-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.1) 100%);
+        z-index: 1;
+    }
+
+    .genre-col:hover .genre-bg {
+        filter: grayscale(0%) brightness(1);
+        transform: scale(1.1);
+    }
+
+    .genre-title {
+        position: absolute;
+        bottom: 10%; width: 100%;
+        text-align: center;
+        font-size: 2.5rem; font-weight: 900;
+        color: var(--neon-green);
+        text-transform: uppercase;
+        z-index: 2;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+    }
+    
+    .genre-rank {
+        position: absolute; top: 20px; left: 50%;
+        transform: translateX(-50%);
+        font-size: 1.5rem; color: white;
+        border: 2px solid white; border-radius: 50%;
+        width: 50px; height: 50px;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 2;
+    }
+</style>
+
+<section>
+    <div style="max-width: 800px; padding-left: 50px;">
+        <div class="hero-text fade-up" style="color: var(--neon-green);">Welcome to</div>
+        <div class="hero-text fade-up" style="animation-delay: 0.3s; color: white;">My Music World.</div>
+        
+        <div class="hero-text fade-up" style="animation-delay: 1.0s; margin-top: 2rem; font-size: 2rem;">
+            Ready for...
+        </div>
+
+        <div class="fancy-logo-container">
+            <div class="fancy-logo">MyMusicVault</div>
+            <div class="fancy-line"></div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <h2 class="display-3 fw-bold mb-5 fade-up" style="text-align: center;">The artists that defined <br><span style="color: var(--neon-pink)">my collection</span>.</h2>
+    
+    <div class="artist-rank-container">
+        {% for artist in top_artists %}
+        <div class="artist-card">
+            <div class="album-stack">
+                {% if artist.artist_imgs|length >= 1 %}
+                <img src="{{ artist.artist_imgs[0] }}">
+                {% endif %}
+                
+                {% if artist.artist_imgs|length >= 2 %}
+                <img src="{{ artist.artist_imgs[1] }}">
+                {% endif %}
+            </div>
+            <h4 class="artist-name">{{ artist.name }}</h4>
+            <div class="badge rounded-pill bg-light text-dark mt-2">{{ artist.count }} tracks</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section style="background-color: var(--neon-green); color: black;">
+    <div class="film-strip-container">
+        <div class="film-track">
+            {% for img in big_year_images %}
+            <img src="{{ img }}">
+            {% endfor %}
+            {% for img in big_year_images %}
+            <img src="{{ img }}">
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="container position-relative" style="z-index: 1;">
+        <div class="row align-items-center">
+            <div class="col-md-5 text-end">
+                <div style="font-size: 13rem; font-weight: 900; line-height: 0.8; letter-spacing: -10px;">{{ big_year }}</div>
+            </div>
+            <div class="col-md-7 text-start">
+                <h2 class="display-2 fw-bold">is my biggest year.</h2>
+                <p class="fs-4 bg-black text-white p-2 d-inline-block">I collected the most music from this era.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section style="background-color: var(--neon-pink); color: black;">
+    <div class="text-center">
+        <div class="gauge-container">
+            <div class="gauge-fill"></div>
+            <div class="gauge-cover"></div> 
+        </div>
+        
+        <h2 class="display-4 fw-bold mt-2">My Music Timeline</h2>
+        <div style="font-size: 8rem; font-weight: 900;">
+            {{ total_hours }}<span class="fs-1">h</span> {{ total_minutes }}<span class="fs-1">m</span>
+        </div>
+        <div class="fs-2 fw-bold mt-2">Total Listening Time</div>
+    </div>
+</section>
+
+<section style="padding: 0;"> 
+    <div class="genre-header-bar">
+        <div class="genre-header-text">My Top Genres</div>
+    </div>
+
+    <div class="genre-grid">
+        {% for genre in top_genres %}
+        <div class="genre-col">
+            <div class="genre-rank">{{ loop.index }}</div>
+            
+            {% if genre.rep_image %}
+            <img src="{{ genre.rep_image }}" class="genre-bg">
+            {% else %}
+            <div class="genre-bg" style="background: #222;"></div>
+            {% endif %}
+            
+            <div class="genre-overlay"></div>
+            
+            <div class="genre-title">{{ genre._id }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}
