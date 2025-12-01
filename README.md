@@ -157,7 +157,7 @@ cd MyMusicVault
 docker-compose up --build
 ```
 
-- Access: Once the logs show the server is running, open your web browser and visit [http://localhost:5000](http://localhost:5000).
+- Access: Once the logs show the server is running, open your web browser and visit [http://localhost:5001](http://localhost:5001).
 
 ## Web Functionality & Features
 
