@@ -43,7 +43,7 @@ The development process follows an ETL pipeline encapsulated within a microservi
 
 - **Data Transformation:** The raw JSON responses from Spotify are cleaned, flattened, and enriched. For example, since track objects do not inherently contain genre information, a secondary lookup is performed to fetch artist metadata and map their genres to each individual track.  
 
-- **Data Loading:** The processed and structured data is saved as a JSON file (final_spotify_data_genres.json). This file is then seeded into the MongoDB database automatically upon container startup.  
+- **Data Loading:** The processed and structured data is saved as a JSON file (`final_spotify_data_genres.json`). This file is then seeded into the MongoDB database automatically upon container startup.  
 
 - **Application Layer:** A Flask web server acts as the interface between the user and the database. It queries MongoDB using PyMongo and renders the data via a responsive, interactive Web UI.  
 
@@ -114,29 +114,29 @@ The project is fully containerized using Docker Compose, which orchestrates thre
 
 ### Docker Compose Logic
 
-- mongodb Service:
+- `mongodb` Service:
 
-  - Image: mongo:6.0
+  - Image: `mongo:6.0`
 
   - Port: Maps port 27017 to host.
 
   - Purpose: Hosts the NoSQL database.
 
-- mongo-seed Service:
+- `mongo-seed` Service:
 
-  - Image: mongo:6.0
+  - Image: `mongo:6.0`
 
-  - Depends On: mongodb (waits for the database to be ready).
+  - Depends On: `mongodb` (waits for the database to be ready).
 
   - Purpose: A transient service that runs the import command mentioned above and then exits. It mounts the local ./data directory to access the JSON file.
 
-- web Service:
+- `web` Service:
 
-  - Build: Custom Dockerfile based on python:3.9-slim.
+  - Build: Custom Dockerfile based on `python:3.9-slim`.
 
   - Port: Maps port 5000 to host.
 
-  - Depends On: mongodb.
+  - Depends On: `mongodb`.
 
   - Purpose: Runs the Flask web application. It connects to the database using the internal hostname mongodb.
 
@@ -145,7 +145,7 @@ The project is fully containerized using Docker Compose, which orchestrates thre
 - Clone the Repository:
 
 ```bash
-git clone [https://github.com/zhiqi-zhang233/MyMusicVault.git](https://github.com/zhiqi-zhang233/MyMusicVault.git)
+git clone https://github.com/zhiqi-zhang233/MyMusicVault.git
 cd MyMusicVault
 ```
 
@@ -169,7 +169,7 @@ The homepage mimics the "Spotify Wrapped" aesthetic, using advanced MongoDB aggr
 
 #### Top Artists
 
-![top artists](screenshots/artitists.png)  
+![top artists](screenshots/top-artists.png)  
 
 Displays the top 5 artists based on collection frequency, with a stacked album art visual.
 
@@ -221,7 +221,7 @@ A grid layout displaying the top 4 genres.
 
   - **Aggregation:** Uses `$unwind` on the genres array (since one song can have multiple genres). It groups by genre name and counts them.
 
-  - **Smart Selection:** To make the UI visually appealing, the backend randomly selects one representative album cover from the songs belonging to that genre using random.choice, ensuring the dashboard looks fresh on every reload.
+  - **Smart Selection:** To make the UI visually appealing, the backend randomly selects one representative album cover from the songs belonging to that genre using `random.choice`, ensuring the dashboard looks fresh on every reload.
 
 ### 2. Music Browser (Search & Filter)
 
